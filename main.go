@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"math"
 	"os"
 )
 
@@ -58,7 +59,11 @@ func main() {
 				col = 0
 			}
 
-			img.Set(int(i), int(j), color.RGBA{uint8(col), uint8(col), uint8(col), 255})
+			red := mapToRange(col * col, 0, 255 * 255, 0, 255)
+			green := mapToRange(col/2, 0, 255/2, 0, 255)
+			blue := mapToRange(math.Sqrt(col), 0, math.Sqrt(255), 0, 255)
+
+			img.Set(int(i), int(j), color.RGBA{uint8(red), uint8(green), uint8(blue), 255})
 
 		}
 
