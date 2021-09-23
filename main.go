@@ -4,11 +4,15 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"io"
 	"math"
 	"os"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type Point struct {
@@ -53,6 +57,16 @@ func (mi *MandelbrotImage) DrawPoint(point Point) {
 			255,
 		},
 	)
+}
+
+func (mi *MandelbrotImage) WriteImage(w io.Writer) error {
+	mi.mu.Lock()
+	defer mi.mu.Unlock()
+	err := png.Encode(w, mi.RGBAImage)
+	if err != nil {
+		return errors.Wrap(err, "error writing mandelbrot image")
+	}
+	return nil
 }
 
 func mapToRange(val, in_min, in_max, out_min, out_max float64) float64 {
@@ -122,6 +136,10 @@ func mandelbrotWorker(wg *sync.WaitGroup, count *uint64, pt Point, jobs chan Poi
 }
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.DebugLevel)
+
 	settings := Settings{
 		Width:         800,
 		Height:        800,
@@ -162,7 +180,11 @@ func main() {
 		time.Sleep(100)
 	}
 
-	f, _ := os.Create("/Users/abtiwary/temp/image.png")
-	png.Encode(f, mandelbrotImg.RGBAImage)
-
+	outfile := "/Users/abtiwary/temp/image.png"
+	f, _ := os.Create(outfile)
+	defer f.Close()
+	err := mandelbrotImg.WriteImage(f)
+	if err != nil {
+		log.WithError(err).Infof("could not write image to file at %s", outfile)
+	}
 }
