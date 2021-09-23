@@ -16,8 +16,8 @@ import (
 )
 
 type Point struct {
-	X     int64
-	Y     int64
+	X     float64
+	Y     float64
 	Red   uint8
 	Green uint8
 	Blue  uint8
@@ -29,6 +29,7 @@ type Settings struct {
 	Min           float64
 	Max           float64
 	MaxIterations int64
+	Center        Point
 }
 
 type MandelbrotImage struct {
@@ -97,6 +98,10 @@ func mandelbrotWorker(wg *sync.WaitGroup, count *uint64, pt Point, jobs chan Poi
 
 	x := mapToRange(float64(i), 0, settings.Width, settings.Min, settings.Max)
 	y := mapToRange(float64(j), 0, settings.Height, settings.Min, settings.Max)
+
+	x = x - settings.Center.X
+	y = y - settings.Center.Y
+
 	x0 := x
 	y0 := y
 
@@ -140,12 +145,31 @@ func main() {
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.DebugLevel)
 
+	/*
+		settings := Settings{
+			Width:         800,
+			Height:        800,
+			Min:           -2.84,
+			Max:           2.04,
+			MaxIterationsStart: 200,
+			MaxIterationsThreshold: 2000,
+			Center: Point{
+				X: 0.0015,
+				Y: -0.80,
+			},
+		}
+	*/
+
 	settings := Settings{
 		Width:         800,
 		Height:        800,
-		Min:           -2.84,
-		Max:           2.04,
+		Min:           -1.00,
+		Max:           1.00,
 		MaxIterations: 200,
+		Center: Point{
+			X: 0.5,
+			Y: 0.0,
+		},
 	}
 
 	var wg sync.WaitGroup
@@ -161,8 +185,8 @@ func main() {
 	for i = 0; i < int64(settings.Width); i++ {
 		for j = 0; j < int64(settings.Height); j++ {
 			pt := Point{
-				X: i,
-				Y: j,
+				X: float64(i),
+				Y: float64(j),
 			}
 			wg.Add(1)
 			go mandelbrotWorker(&wg, &jobCount, pt, jobs, settings)
